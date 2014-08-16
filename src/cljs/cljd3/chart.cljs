@@ -1,8 +1,10 @@
 (ns cljd3.chart
   (:require [cljd3.core :refer [select select-all style]]))
 
-; TODO create the schema validations
-; TODO test!
+; TODO create the schema validations!
+; TODO add simple horizontal guide lines!
+; TODO allow for dated guide lines!
+; TODO allow for configurable mouseover on svg!
 ; x/type can be either :int :float :date :date-time :time
 
 (def ^:private line-defaults 
@@ -13,16 +15,17 @@
    :height 300
    :width  300
    :interpolate "linear"
-   :x      {:label  "X Axis"
-            :orient "bottom"
-            :type   :int
-            :ticks  5
-            :format nil}
-   :y      {:label  "Y Axis"
-            :orient "left"
-            :type   :float
-            :ticks  5
-            :format nil}})
+   :x      {:label     "X Axis"
+            :orient    "bottom"
+            :type      :int
+            :ticks     5
+            :mouseover nil
+            :format    nil}
+   :y      {:label     "Y Axis"
+            :orient    "left"
+            :type      :float
+            :ticks     5
+            :format    nil}})
 
 ; there has to be something preexisting for this
 ; user=> (any-of {:a 1 :b 2} :c :d)
@@ -78,6 +81,7 @@
         width   (get-val :width)
         x       (get-map :x)
         y       (get-map :y)
+        x-mo    (:mouseover x)
         x-label (:label x)
         y-label (:label y)
         top     (:top margin)
@@ -173,12 +177,22 @@
                              xval (nth all-x idx)
                              xscl (x-scale xval)
                              xovr (select ".x-overlay")
-                             xftt (x-fmt xval)]
+                             xftt (x-fmt xval)
+                             mdata (for [s series 
+                                         :let [key (:key s)
+                                               val (nth (get-vals s :y) idx)]]
+                                     {:key key 
+                                      :y   val})]
+                         
+                         (when x-mo
+                           (x-mo mdata))
                          (-> xovr
                            (.attr "transform" (str "translate(" xscl "," chart-height ")")))
                          (-> xovr
                            (.select "text")
                            (.text   (str xftt)))
+                         
+                         ; TODO the new mouseover data above might obviate some code below
                          
                          (doseq [s series]
                            (let [selector (str "." (series->cls s))

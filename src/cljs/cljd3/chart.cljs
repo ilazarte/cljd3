@@ -67,7 +67,7 @@
   [options]
   (let [not-nil?     (complement nil?)
         cil?         #(and (contains? %1 %2) (not-nil? (%2 %1)))
-        is-time?     #(or (= :date %) (= :date-time %) (= :time %))
+        is-time?     #(or (= :date %) (= :datetime %) (= :time %))
         get-map      #(merge (% line-defaults) (% options))
         get-val      #(or (% options) (% line-defaults))
         get-val-fmt  #(let [type   (:type %)
@@ -153,7 +153,13 @@
     ; somehow date arithmetic worked in the date sample... look into it
     ;   
     
-    (let [series->cls #(-> (:key %) (str "-overlay"))
+    (let [series->cls   #(-> (:key %) (str "-overlay"))
+          show-overlays #(let [overlays (select-all svg ".plot-overlay")
+                               styled   (.style overlays "display" "inline")]
+                           styled)
+          hide-overlays #(let [overlays (select-all svg ".plot-overlay")
+                               styled   (.style overlays "display" "none")]
+                           styled) 
           plot        (-> (.selectAll svg ".plot")
                         (.data (clj->js series))
                         (.enter)
@@ -176,7 +182,7 @@
                              idx  (mouseidx this)
                              xval (nth all-x idx)
                              xscl (x-scale xval)
-                             xovr (select ".x-overlay")
+                             xovr (select svg ".x-overlay")
                              xftt (x-fmt xval)
                              mdata (for [s series 
                                          :let [key (:key s)
@@ -200,7 +206,7 @@
                                  yvals    (get-vals s :y)
                                  yval     (nth yvals idx)
                                  yscl     (y-scale yval)
-                                 node     (select selector)]
+                                 node     (select svg selector)]
                              (-> node
                                  (.attr "transform" (str "translate(" xscl "," yscl ")")))
                              (-> node
@@ -251,7 +257,7 @@
       
       (-> svg
         (.append "g")
-        (.attr   "class" "x-overlay  plot-overlay")
+        (.attr   "class" "x-overlay plot-overlay")
         (.style  "display" "none")
         (.append "text")
         (.attr   "x" 9)
@@ -272,8 +278,8 @@
       (-> svg
         (.append "rect")
         (.attr "class" "overlay")
-        (.attr "width" chart-width)
+        (.attr "width" chart-width) 
         (.attr "height" chart-height)
-        (.on "mouseover" #(-> (select-all ".plot-overlay") (.style "display" nil)))
-        (.on "mouseout"  #(-> (select-all ".plot-overlay") (.style "display" "none")))
+        (.on "mouseover" show-overlays)
+        (.on "mouseout"  hide-overlays)
         (.on "mousemove" mousemove)))))

@@ -33,7 +33,7 @@
           [:div "cljx-start loaded"]
           (include-js
             "goog/base.js"
-            "/webjars/d3js/3.4.9/d3.js"
+            "/webjars/d3js/3.5.2/d3.js"
             "cljd3.js")
           [:script "goog.require('cljd3.chart_dev');"]]))
   

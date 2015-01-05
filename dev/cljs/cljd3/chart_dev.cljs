@@ -2,41 +2,56 @@
   (:require [cljd3.core  :as core] 
             [cljd3.chart :as chart]))
 
-(def series
-  [{:key    "GOOG"
-    :values [{:x (js/Date. 1405332000000)
-              :y 1.042}
-             {:x (js/Date. 1405418400000)
-              :y 1.015}
-             {:x (js/Date. 1405504800000)
-              :y 1.007}
-             {:x (js/Date. 1405591200000)
-              :y 1.042}]}
-   {:key    "AAPL"
-    :values [{:x (js/Date. 1405332000000)
-              :y 1.521}
-             {:x (js/Date. 1405418400000)
-              :y 1.390}
-             {:x (js/Date. 1405504800000)
-              :y 1.320}
-             {:x (js/Date. 1405591200000)
-              :y 1.001}]}])
+(def ibm-series-wide-dates 
+  {:key    "IBM"
+   :values [{:x (js/Date. 1405332000000)
+             :y 1.042}
+            {:x (js/Date. 1405418400000)
+             :y 1.015}
+            {:x (js/Date. 1437040800000)
+             :y 1.007}
+            {:x (js/Date. 1437127200000)
+             :y 1.242}]})
 
-(def series-1
-  [(first series)])
+(def goog-series 
+  {:key    "GOOG"
+   :values [{:x (js/Date. 1405332000000)
+             :y 1.042}
+            {:x (js/Date. 1405418400000)
+             :y 1.015}
+            {:x (js/Date. 1405504800000)
+             :y 1.007}
+            {:x (js/Date. 1405591200000)
+             :y 1.242}]})
 
-(js/console.log "loading dev code two series")
+(def aapl-series
+  {:key    "AAPL"
+   :values [{:x (js/Date. 1405332000000)
+             :y 1.521}
+            {:x (js/Date. 1405418400000)
+             :y 1.390}
+            {:x (js/Date. 1405504800000)
+             :y 1.320}
+            {:x (js/Date. 1405591200000)
+             :y 1.001}]})
 
-; TODO get this working, seems to not create div for some reason
+(def series [goog-series])
+
+(js/console.log "loading dev code three series")
+
 (defn test-single-line-chart
   []
   (core/put-by-id (core/select "body") "div" "single-line-chart")
+  (js/console.log "dates:")
+  (js/console.log (js/Date. 1405332000000))
+  (js/console.log (js/Date. 1437127200000))
   (chart/line {:container "#single-line-chart"
                :series series
-               :x      {:type :date
-                        :format "%m-%d-%Y"
-                        :label "Date (MM-dd-yyyy)"}
-               :y      {:label "SMA (price/MA(20))"}}))
+               :x      {:format "%m-%d-%Y"
+                        :type   :datetime
+                        :ticks  4
+                        :label  "Date (MM-dd-yyyy)"}
+               :y      {:label  "PMA (price/MA(20))"}}))
 
 (comment (test-single-line-chart))
 (test-single-line-chart)

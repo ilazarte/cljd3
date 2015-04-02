@@ -111,7 +111,7 @@
                   (.x #(x-scale (clj->js (.-x %))))
                   (.y #(y-scale (clj->js (.-y %)))))
         container (:container options)
-        svg       (-> (select container)
+        svg       (-> (select container) 
                     (.append "svg")
                     (.attr "width" width)
                     (.attr "height" height)
@@ -248,10 +248,11 @@
       ; its also targeted in styles
       ; 
       
-      #_(scene svg [:g {:class (series->cls s)
-                       :style {:display "none"}}
-                   [:text {:x 9
-                           :dy ".35em"}]])
+      (comment
+        (scene svg [:g {:class (series->cls s)
+                        :style {:display "none"}}
+                    [:text {:x  9
+                            :dy ".35em"}]]))
       
       ; add an overlay just for the x axis
       

@@ -1,6 +1,16 @@
 (ns cljd3.chart-dev
-  (:require [cljd3.core  :as core] 
-            [cljd3.chart :as chart]))
+  (:require 
+    [schema.core :as s :include-macros true]
+    [figwheel.client :as figwheel :include-macros true]
+    [cljd3.core  :as core] 
+    [cljd3.chart :as chart]
+    [cljd3.gog   :as gog]))
+
+(enable-console-print!)
+
+;--------------------------------------
+; series
+;--------------------------------------
 
 (def ibm-series-wide-dates 
   {:key    "IBM"
@@ -54,25 +64,25 @@
                :y      {:label  "PMA (price/MA(20))"}}))
 
 (comment (test-single-line-chart))
-(test-single-line-chart)
 
 (defn test-d3-dsl
   []
   (let [sel  (core/put-by-id (core/select "body") "div" "d3-dsl")
-        spec [:svg
+        spec [:svg {:style {:width  400
+                            :height 400}} 
               [:.y.axis {:derp "test y-axis"}
                [:text {:transform "rotate(-90)"
                        :y         6
                        :dy        ".71em"
                        :style     {:text-anchor "end"}
-                       :text      "test y-label"}]
+                       :text      "node 1"}]
                [:text {:transform "rotate(-45)"
                        :class     "y0 mama!" 
                        :y         6
                        :dy        ".71em"
                        :style     {:text-anchor "end"}
                        :text      "test y-label"}]]]
-        res  (core/scene sel spec)]
+        res  (core/layer sel spec)]
     (js/console.log "rendered svg:")
     (js/console.log res)))
 
@@ -93,7 +103,7 @@
         width    960
         height   500
         bodysel  (core/select "body")
-        svg      (core/scene 
+        svg      (core/layer 
                    bodysel
                    [:svg.container {:width  width
                                     :height height}
@@ -141,3 +151,13 @@
       1500)))
 
 (comment (test-general-update-pattern-3))
+
+;-------------------------------------------------------
+; MAIN
+;-------------------------------------------------------
+
+(figwheel/watch-and-reload
+  :websocket-url "ws://localhost:3449/figwheel-ws"
+  :jsload-callback #(test-d3-dsl))
+
+(test-d3-dsl)

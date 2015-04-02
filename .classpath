@@ -5,6 +5,7 @@
 	<classpathentry kind="src" path="src/clj"/>
 	<classpathentry kind="src" path="dev/cljs"/>
 	<classpathentry kind="src" path="template/clj"/>
+	<classpathentry kind="src" path="src/cljx"/>
 	<classpathentry kind="lib" path="target/classes">
 		<attributes>
 			<attribute name="optional" value="true"/>

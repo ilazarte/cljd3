@@ -1,16 +1,13 @@
 (ns cljd3.core
+  (:require 
+    [cljd3.util :as util])
   (:refer-clojure :exclude [remove]))
 
 ; A reasonable wrapper around d3
-; See scene for a super simple hiccup like d3 enabled rendering method.
 ; other functions typically work on d3 selections
 ;
 ; note: select/select return an array of an arrays. see d3 docs.
 ; TODO bug fix the display try css from demo
-
-(def ^:private not-nil? (complement nil?))
-
-(def ^:private not-empty? (complement empty?))
 
 #_(comment
   "the next few functions deal with producing the rendered svg graph via d3
@@ -35,93 +32,87 @@
                       :style     {:text-anchor "end"}
                       :text      y-label}]]))
 
-(defn- is-event? [key]
-  (some #(= key %) ["mouseover" "mouseout" "mousemove"]))
-
-(defn- join [sep coll]
-  (apply str (interpose sep coll)))
-
-(defn- tag-def [kw]
-  "provide the initial map from the first spec component in the vector"
+(defn- tag-def 
+  "Return a map of:
+   tag   - default tag string is g if none is specified
+   id    - the id string specified by a # sign
+   class - any class added as a vector (or empty vector)"
+  [kw]
   (let [kwstr (name kw)]
-    {:tag   (or (-> (re-seq #"^\w+" kwstr) first) "g")
+    {:tag   (or (first (re-seq #"^\w+" kwstr)) "g")
      :id    (-> (re-seq #"\#(\w+)" kwstr) first second)
      :class (map second (re-seq #"\.(\w+)" kwstr))}))
 
-(defn- level-def [spec]
-  "at this spec level combine the tag map and the attr map to form a definition"
+(defn- level-def 
+  "Combine the tag map and the attr map to form a definition"
+  [spec]
   (let [tag  (tag-def (first spec))
         maps (filter map? spec)
-        attr (if (not-empty? maps)
-               (let [m (first maps)]
+        attr (if (not (empty? maps))
+               (let [m (first maps)] 
                  (if (contains? m :class)
                    (update-in m [:class] #(re-seq #"\w+" %))
-                   m))
-               nil)]
-    (if (not-nil? attr)
-      (merge tag attr)
-      tag)))
+                   m)))
+        def  (if (nil? attr) tag (merge tag attr))]
+    def))
 
-; there is a looping issue somewhere in the svg code
-; it suggests that i'm missing the last iteration...
+(defn- execute-api
+  "Execute the d3 api according to the key found
+   Special handling includes the following:
+   class: converted to a string
+   call:  invoked with value
+   text:  invoked with value
+   on:    each key found in map executed
+   style: each key found in map executed
+   default is to treat item as a simple attr k/v"
+  [selection k m]
+  (let [v    (k m)
+        kstr (name k)] 
+    (condp = k
+      :class (if (empty? v)
+               selection
+               (.attr selection kstr (util/join v " ")))
+      :call  (.call selection v)
+      :text  (.text selection v)
+      :html  (.html selection v)
+      :on    (reduce-kv #(doto %1 (.on (name %2) %3)) selection v) 
+      :style (reduce-kv #(doto %1 (.style (name %2) %3)) selection v)
+      (.attr selection kstr v))))
 
-#_(loop [f (first (range 1 5)) 
-       r (range 2 5)]
-   (println f) 
-  (if (empty? r) 
-    f 
-    (recur (first r) (rest r))))
-
-(defn- render-svg! [parentsel spec]
-  "invoke the d3 api using definition with the remaining keys.
-   append the current tag and return it as the new selection"
+(defn- render-svg 
+  "Append the current spec to the selection and return it as the new selection.
+   Execute the d3 api against all the keys of the spec."
+  [parentsel spec]
+  {:pre [parentsel]}
   (let [def       (level-def spec)
         selection (.append parentsel (:tag def))
-        tkeys     (filter #(not= :tag %) (keys def))]
-    (loop [rsel  selection
-           rkeys tkeys]
-      (if (empty? rkeys)
-        rsel
-        (let [tkey    (first rkeys)
-              tkeystr (clj->js tkey)
-              nrsel   (cond 
-                        (= tkey :class) (.attr rsel "class" (join " " (:class def)))
-                        (= tkey :call)  (.call rsel (tkey def))
-                        (= tkey :text)  (.text rsel (tkey def))
-                        (is-event? tkey) (.on rsel (tkey def))
-                        (= tkey :style) (let [smap  (:style def)
-                                              skeys (keys smap)]
-                                          (doseq [skey skeys]
-                                            (let [skeystr (clj->js skey)] 
-                                              (.style rsel skeystr (skey smap)))))
-                        :else (.attr rsel tkeystr (tkey def)))] 
-          (recur nrsel (rest rkeys)))))))
+        rdef      (dissoc def :tag)]
+    (reduce-kv #(doto %1 (execute-api %2 rdef)) selection rdef)))
 
-; 
-; stupid recursive crap...
-; debugged this and render-svg for hours.. thanks non-refreshing source maps!
-;
-; http://stackoverflow.com/questions/7813497/clojure-what-exactly-is-tail-position-for-recur
-; http://stackoverflow.com/questions/1217131/recursive-doall-in-clojure
-;
-(defn scene [sel spec]
-  (let [nsel   (render-svg! sel spec)  
-        nspecs (filter vector? spec)]
-    (loop [rsel   nsel
-           rspecs nspecs]
-      (if (empty? rspecs)
-        rsel
-        (recur (scene rsel (first rspecs)) (rest rspecs))))))
+; TODO what if someone invokes (layer svg [:child1 ..] [:child2 ..])
+; TODO currently api only supports (layer svg [:child1 ..])
+; TODO hiccup allows a string as a child... is that a innerhtml basically?
+; TODO since we have svg elements which may be finicky, :text and :html
+(defn layer
+  "The main entrypoint to the hiccup like api.
+  The process starts with a d3 selection."
+  [selection spec]
+  (let [selection (if (not (js/Array.isArray selection)) (js/d3.select selection) selection)
+        nsel      (render-svg selection spec)  
+        nspecs    (filter vector? spec)]
+    (reduce #(doto %1 (layer %2)) nsel nspecs)))
 
-(defn select 
-  "d3 select first wrapper" 
+(defn datum
+  [selection]
+  (.datum selection))
+
+(defn select  
   ([selector]
     (js/d3.select selector))
   ([selection selector]
     (.select selection selector)))
 
 (defn select-all
-  "d3 select all wrapper"
   ([selector]
     (js/d3.selectAll selector))
   ([selection selector]
@@ -189,9 +180,8 @@
    If the tag is already a child of the element
    the first result will be returned"
   [selection tagname]
-  (let [sel (select selection tagname)
-        el  (first (first sel))]
-    (if (not-nil? el)
+  (let [sel (select selection tagname)]
+    (if-let [el  (first (first sel))] 
       el
       (-> selection 
         (.append tagname)))))
@@ -201,10 +191,9 @@
    The element is given the id and added to the parent selection a
    If the id already exists, it will be returned"
   [selection tagname id]
-  (let [sel (select selection (str "#" id))
-        el  (first (first sel))]
-     (if (not-nil? el)
+  (let [sel (select selection (str "#" id))]
+    (if-let [el (first (first sel))]
       el
       (-> selection 
-         (.append tagname) 
-         (.attr "id" id)))))
+        (.append tagname) 
+        (.attr "id" id)))))

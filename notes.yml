@@ -1,0 +1,26 @@
+Chart Specification Notes: 
+
+Updated Goals:
+  - Re-align project as similar to jayq
+  - Add special handling for transform function
+  - Find a place to execute in place transition functions
+  - Encourage patterns around enter/update/exit selections
+  - Encourage chart patterns around gogish scale first, then operate
+  - Re-implement line with new schema defs
+  - Add grid to line
+  - Revisit mouseover handling in line chart - export standard data somehow as callback?
+  - Find an easy way to collapse gapped time axis (don't use scales maybe?)
+
+Done:
+  - Add event handlers to scene function in form of on
+  - Port schema defs from new line function in dusk
+
+Archive:
+  Implementation Goals:
+  - multiple canvas per one chart
+  - each chart can have its own axis  
+  
+  Secondary Goals:
+  - axis and more generalized plotting requirements
+  - can axis be a canvas in itself?
+  - can legend be a canvas in itself?

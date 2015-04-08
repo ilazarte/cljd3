@@ -15,6 +15,68 @@ Done:
   - Add event handlers to scene function in form of on
   - Port schema defs from new line function in dusk
 
+Ideas:
+  - Breakdown of core d3 API design and usage:
+    - GUP - The data bind and related apis
+    - GOG - The data pipeline (of which GUP is a step)
+    - Shapes - SVG Renderers such as line, arc, area.
+    - Scales - Mapping of input ranges to output ranges domain->range
+    - Layouts - Prebuilt configurations of svg.
+    - Transitions - Opportunities here for macro based improvements:
+      - http://blog.visual.ly/creating-animations-and-transitions-with-d3-js/ (better scheduling)
+    - Utils: Extra utilities such as time formatting etc.
+  - Overlap:
+    - A lot of GUP and GOG overlap, but d3 blurs the distinction
+    - An example is the concept of scales.
+    - A d3 scale is simultaneously The Scale, Geometry, and Coordinate step.
+    - Is it possible to pre-transform data, and not use scales in final render functions?
+    - It is important to provide static svg/html builders in addition to GUP oriented functions.
+    - For example, when building a grid over a line chart, no need to use values of data to map it.
+    - I should be able to have a line from 0 400 with little fanfare.
+  - Wrapping GUP:
+    - One wrapping function which bootstraps html
+    - Produces a function which 'updates'
+    - It selects (or has ref to) nodes to change
+    - DATA BIND:
+      - selection.data(newdata, identity-fn);
+      - With a reference to nodes to change select
+      - The data should be an array at this point
+    - UPDATE:
+      - selection.attr("class", "update") etc
+      - Update old elements as needed
+    - ENTER:
+      - selection.enter().append("text") etc.
+      - Append new elements, set attributes etc
+    - ENTER+UPDATE:
+      - selection.attr() etc.
+      - AFTER the ENTER step, reuse the original selection
+      - Any changes executed now will affect both update
+        and entered items from the last step
+    - EXIT:
+      - selection.exit() etc.
+      - Remove any items no longer needed  
+  - Codifying GOG:
+    - The Grammar of Graphics has a pipeline
+    - It's important to note that 
+    - Variables:
+      - Extracting data from data source
+    - Algebra:
+      - Convert the data into in memory data tables
+    - Scales:
+      - Normalize the data to prepare it for rendering
+      - In GOG this means the data is 0-1
+      - Do not confuse with d3 "scales" which are interpolation functions to coordinates.
+    - Statistics:
+      - Perform statistic operations on the normalized data.
+    - Geometry:
+      - Evaluation the position
+    - Coordinates:
+      - Place within a coordinate system
+    - Aesthetics:
+      - All other visual properties besides position, size color etc.
+    - Renderer:
+      - Render!
+    
 Archive:
   Implementation Goals:
   - multiple canvas per one chart

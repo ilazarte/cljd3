@@ -2,7 +2,10 @@
   (:require 
     [schema.core :as s :include-macros true]
     [figwheel.client :as figwheel :include-macros true]
-    [cljd3.core  :as core] 
+    [cljd3.core  :as core :refer [enter 
+                                  exit 
+                                  transition 
+                                  duration]] 
     [cljd3.chart :as chart]
     [cljd3.gog   :as gog]))
 
@@ -98,17 +101,74 @@
 ; then enter and exit can be allowed
 ; TODO do mutable shuffle and data function
 
+(defn generate-table-data
+  []
+  (repeatedly 10 #(identity (let [ri (rand-int)]
+                              {:num ri
+                               :lbl (str "label-" ri)
+                               :lbl2 (str "label2- ri")}))))
+
+(defn test-table
+  [data columns]
+  (let [data (generate-table-data)
+        div  (core/layer 
+               (core/select "div")
+               [:table {:width 600}
+                [:thead nil]
+                [:tbody nil]])
+        render (fn [data]
+                 (let [cols (keys (first data))
+                       thead (core/select div "thead")
+                       tbody (core/select div "tbody")]
+                   (core/layer thead
+                     [:tr
+                      [:th {:data cols}]]
+                     )))]
+    [:body 
+     [:table {:style {:margin-left "250px"}}
+      [:thead
+       [:tr
+        [:th {:data columns}]]]
+      [:tbody
+       [:td {:data rows}
+       ]]]]))
+
 (defn test-general-update-pattern-3 []
   (let [alphabet (re-seq #"\w" "abcdefghijklmnopqrstuvwxyz")
         width    960
         height   500
+        height2  (/ height 2)
         bodysel  (core/select "body")
         svg      (core/layer 
                    bodysel
                    [:svg.container {:width  width
                                     :height height}
-                    [:g {:transform (str "translate(32," (/ height 2) ")")}]])
+                    [:g {:transform (str "translate(32," height2 ")")}]])
         by-32    (fn [d i] (* i 32))
+        update   (fn [udata]
+                   (let [textsel  (-> svg
+                                    (core/select-all "text")
+                                    (core/data udata identity))]
+                     (-> textsel
+                       (core/operators {:class "gup-update gup-text"})
+                       (core/transition {:duration 750
+                                         :x        by-32}))
+                     (-> textsel
+                       (core/enter "text" {:class "gup-enter gup-text"
+                                           :dy    ".35em"
+                                           :y     60
+                                           :x     by-32
+                                           :text  identity
+                                           :style {:fill-opacity 0.000001}})
+                       (core/transition {:duration     750
+                                         :y            0
+                                         :fill-opacity 1}))
+                     (-> textsel
+                       (core/exit {:class "gup-exit gup-text"})
+                       (core/transition {:duration     750
+                                         :y            60
+                                         :fill-opacity 0.000001}) 
+                       (core/remove))))
         update   (fn [udata]
                    (let [textsel  (-> svg
                                     (core/select-all "text")
@@ -117,29 +177,29 @@
                        (core/attr {:class "gup-update gup-text"})
                        (core/transition)
                        (core/duration 750)
-                       (core/attr {:x by-32}))
+                       (core/attrs {:x by-32}))
                      
                      (-> textsel
                        (core/enter)
                        (core/append "text")
-                       (core/attr {:class "gup-enter gup-text"
+                       (core/attrs {:class "gup-enter gup-text"
                                    :dy    ".35em"
-                                   :y     -60
+                                   :y     60
                                    :x     by-32})
-                       (core/style {:fill-opacity 0.000001})
+                       (core/styles {:fill-opacity 0.000001})
                        (core/text  identity)
                        (core/transition)
                        (core/duration 750)
-                       (core/attr     {:y 0})
-                       (core/style    {:fill-opacity 1}))
+                       (core/attrs     {:y 0})
+                       (core/styles    {:fill-opacity 1}))
                      
                      (-> textsel
                        (core/exit)
                        (core/attr {:class "gup-exit gup-text"})
                        (core/transition)
                        (core/duration 750)
-                       (core/attr {:y 60})
-                       (core/style {:fill-opacity 0.000001})
+                       (core/attrs {:y 60})
+                       (core/styles {:fill-opacity 0.000001})
                        (core/remove))))]
     (update alphabet)
     
@@ -156,8 +216,11 @@
 ; MAIN
 ;-------------------------------------------------------
 
+(defn invoker []
+  (test-general-update-pattern-3))
+
 (figwheel/watch-and-reload
   :websocket-url "ws://localhost:3449/figwheel-ws"
-  :jsload-callback #(test-d3-dsl))
+  :jsload-callback #(invoker))
 
-(test-d3-dsl)
+(invoker)

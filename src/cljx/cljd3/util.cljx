@@ -35,6 +35,11 @@
               :else    y))]
     (merge-with fx x y)))
 
+; check to see if data attr is found.
+; if so, use data, insert enter and then do append.
+; assume identity by default for text
+; automatically insert enter invocations if data is found.
+
 (defmacro precond
   "Not needed thanks to modern browser debugging and :pre." 
   [test & args]

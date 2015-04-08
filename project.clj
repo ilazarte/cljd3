@@ -31,7 +31,7 @@
   :cljsbuild {:builds {:cljd3
                        {:source-paths ["target/classes" "target/generated/classes" "src/cljs"]
                         :compiler {:output-to "resources/public/js/cljd3.js"
-                                     :source-map "resources/public/js/cljd3.js.map"
+                                   :source-map "resources/public/js/cljd3.js.map"
                                    :output-dir "resources/public/js" 
                                    :optimizations :none}}}}
   

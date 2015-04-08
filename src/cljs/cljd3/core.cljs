@@ -64,20 +64,38 @@
    text:  invoked with value
    on:    each key found in map executed
    style: each key found in map executed
-   default is to treat item as a simple attr k/v"
+   default is to treat item as a simple attr k/v
+   Data/datum noticeably absent in order to encourage careful placement in invocations."
   [selection k m]
   (let [v    (k m)
         kstr (name k)] 
     (condp = k
-      :class (if (empty? v)
+      :class (cond
+               (empty? v)
                selection
-               (.attr selection kstr (util/join v " ")))
+               (coll? v)
+               (.attr selection kstr (util/join v " "))
+               (string? v)
+               (.attr selection kstr v)) 
       :call  (.call selection v)
       :text  (.text selection v)
       :html  (.html selection v)
       :on    (reduce-kv #(doto %1 (.on (name %2) %3)) selection v) 
       :style (reduce-kv #(doto %1 (.style (name %2) %3)) selection v)
+      :property (reduce-kv #(doto %1 (.property (name %2) %3)) selection v)
       (.attr selection kstr v))))
+
+(defn- apply-api
+  "Apply execute api, handles a super set of d3 attrs.
+   :on {} event handlers
+   :style {} style attributes
+   :text text content
+   :html html content
+   :duration time
+   This should only be called by the layer api, or operators.
+   It's a tiny wrap around the reduce statement."
+  [selection props]
+  (reduce-kv #(doto %1 (execute-api %2 props)) selection props))
 
 (defn- render-svg 
   "Append the current spec to the selection and return it as the new selection.
@@ -87,7 +105,7 @@
   (let [def       (level-def spec)
         selection (.append parentsel (:tag def))
         rdef      (dissoc def :tag)]
-    (reduce-kv #(doto %1 (execute-api %2 rdef)) selection rdef)))
+    (apply-api selection rdef)))
 
 ; TODO what if someone invokes (layer svg [:child1 ..] [:child2 ..])
 ; TODO currently api only supports (layer svg [:child1 ..])
@@ -118,8 +136,24 @@
   ([selection selector]
     (.selectAll selection selector)))
 
-(defn transition [selection]
-  (.transition selection))
+(defn operators
+  "Convenience function to set a variety of d3 attrs/styles etc on at one time.
+   Some functions such as attrs, call it internally.
+   Handles the occasional edge case such as reordering invocations to invoke duration first."
+  [selection m]
+  (if (:duration m)
+    (-> selection
+      (.duration selection (:duration selection))
+      (apply-api selection (dissoc m :duration)))
+    (apply-api selection m)))
+
+(defn transition 
+  ([selection]
+    (.transition selection))
+  ([selection m]
+    (-> selection
+      (.transition)
+      (operators selection m))))
 
 (defn append [selection item]
   (.append selection item))
@@ -127,29 +161,17 @@
 (defn size [selection]
   (.size selection))
 
-(defn attr [selection m]
-  (loop [ks  (keys m)
-         sel selection]
-    (if (empty? ks)
-      sel
-      (let [k (first ks)
-            r (rest ks)
-        n (name k)
-        v (clj->js (k m)) 
-            s (.attr selection n v)]
-        (recur r s)))))
+(defn attr [selection k v]
+  (.attr selection k v))
 
-(defn style [selection m]
-  (loop [ks  (keys m)
-         sel selection]
-    (if (empty? ks)
-      sel
-      (let [k (first ks)
-            r (rest ks)
-            n (name k)
-            v (clj->js (k m))
-            s (.style selection n v)]
-        (recur r s)))))
+(defn attrs [selection m]
+  (operators selection m))
+
+(defn style [selection k v]
+  (.style selection k v))
+
+(defn styles [selection m]
+  (operators selection {:style m}))
 
 (defn text [selection v]
   (.text selection v))
@@ -157,11 +179,26 @@
 (defn duration [selection v]
   (.duration selection v))
 
-(defn enter [selection]
-  (.enter selection))
+(defn enter 
+  ([selection]
+    (.enter selection))
+  ([selection m]
+    (-> selection
+      (.enter)
+      (operators m)))
+  ([selection tag m]
+    (-> selection
+      (.enter)
+      (.append tag)
+      (operators m))))
 
-(defn exit [selection]
-  (.exit selection))
+(defn exit 
+  ([selection]
+    (.exit selection))
+  ([selection m]
+    (-> selection
+      (.exit)
+      (operators m))))
 
 (defn remove [selection]
   (.remove selection))

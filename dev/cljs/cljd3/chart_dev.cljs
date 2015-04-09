@@ -103,7 +103,7 @@
 
 (defn generate-table-data
   []
-  (repeatedly 10 #(identity (let [ri (rand-int)]
+  (repeatedly 10 #(identity (let [ri (rand-int 10)]
                               {:num ri
                                :lbl (str "label-" ri)
                                :lbl2 (str "label2- ri")}))))
@@ -111,6 +111,7 @@
 (defn test-table
   [data columns]
   (let [data (generate-table-data)
+        rows nil
         div  (core/layer 
                (core/select "div")
                [:table {:width 600}
@@ -146,7 +147,8 @@
                     [:g {:transform (str "translate(32," height2 ")")}]])
         by-32    (fn [d i] (* i 32))
         update   (fn [udata]
-                   (let [textsel  (-> svg
+                   (let [g        (core/select svg "g")
+                         textsel  (-> g
                                     (core/select-all "text")
                                     (core/data udata identity))]
                      (-> textsel
@@ -165,41 +167,9 @@
                                          :fill-opacity 1}))
                      (-> textsel
                        (core/exit {:class "gup-exit gup-text"})
-                       (core/transition {:duration     750
-                                         :y            60
-                                         :fill-opacity 0.000001}) 
-                       (core/remove))))
-        update   (fn [udata]
-                   (let [textsel  (-> svg
-                                    (core/select-all "text")
-                                    (core/data udata identity))]
-                     (-> textsel
-                       (core/attr {:class "gup-update gup-text"})
-                       (core/transition)
-                       (core/duration 750)
-                       (core/attrs {:x by-32}))
-                     
-                     (-> textsel
-                       (core/enter)
-                       (core/append "text")
-                       (core/attrs {:class "gup-enter gup-text"
-                                   :dy    ".35em"
-                                   :y     60
-                                   :x     by-32})
-                       (core/styles {:fill-opacity 0.000001})
-                       (core/text  identity)
-                       (core/transition)
-                       (core/duration 750)
-                       (core/attrs     {:y 0})
-                       (core/styles    {:fill-opacity 1}))
-                     
-                     (-> textsel
-                       (core/exit)
-                       (core/attr {:class "gup-exit gup-text"})
-                       (core/transition)
-                       (core/duration 750)
-                       (core/attrs {:y 60})
-                       (core/styles {:fill-opacity 0.000001})
+                       (core/transition {:duration 750
+                                         :y        60
+                                         :style    {:fill-opacity 0.000001}}) 
                        (core/remove))))]
     (update alphabet)
     
@@ -216,11 +186,11 @@
 ; MAIN
 ;-------------------------------------------------------
 
-(defn invoker []
+(defn start []
   (test-general-update-pattern-3))
 
 (figwheel/watch-and-reload
   :websocket-url "ws://localhost:3449/figwheel-ws"
-  :jsload-callback #(invoker))
+  :jsload-callback #(start))
 
-(invoker)
+(start)

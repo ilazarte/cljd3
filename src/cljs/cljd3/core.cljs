@@ -143,8 +143,8 @@
   [selection m]
   (if (:duration m)
     (-> selection
-      (.duration selection (:duration selection))
-      (apply-api selection (dissoc m :duration)))
+      (.duration (:duration selection))
+      (apply-api (dissoc m :duration)))
     (apply-api selection m)))
 
 (defn transition 
@@ -153,7 +153,7 @@
   ([selection m]
     (-> selection
       (.transition)
-      (operators selection m))))
+      (operators m))))
 
 (defn append [selection item]
   (.append selection item))

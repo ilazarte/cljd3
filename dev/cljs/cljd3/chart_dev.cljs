@@ -158,13 +158,13 @@
                      (-> textsel
                        (core/enter "text" {:class "gup-enter gup-text"
                                            :dy    ".35em"
-                                           :y     60
-                                           :x     by-32
-                                           :text  identity
-                                           :style {:fill-opacity 0.000001}})
-                       (core/transition {:duration     750
-                                         :y            0
-                                         :fill-opacity 1}))
+                                           :y      60
+                                           :x      by-32
+                                           :text   identity
+                                           :style  {:fill-opacity 0.000001}})
+                       (core/transition {:duration 750
+                                         :y        0
+                                         :style    {:fill-opacity 1}}))
                      (-> textsel
                        (core/exit {:class "gup-exit gup-text"})
                        (core/transition {:duration 750

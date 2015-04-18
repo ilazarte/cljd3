@@ -142,9 +142,10 @@
    Handles the occasional edge case such as reordering invocations to invoke duration first."
   [selection m]
   (if (:duration m)
-    (-> selection
-      (.duration (:duration selection))
-      (apply-api (dissoc m :duration)))
+    (let [d  (:duration m)
+          s  (.duration selection d)
+          nm (dissoc m :duration)]
+      (apply-api s nm))
     (apply-api selection m)))
 
 (defn transition 

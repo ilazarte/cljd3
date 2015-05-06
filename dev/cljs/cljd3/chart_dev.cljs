@@ -173,6 +173,19 @@
                        (core/remove))))]
     (update alphabet)
     
+    (comment
+      "sketching out a combined format, seems impossible from this angle.
+       get more practical first, and find use for such a thing."
+      (with "text"
+        {:gup-text "blah"} [{:class "gup-update gup-text"}
+                            {:class "gup-enter gup-text"
+                             :dy    ".35em"
+                             :y      60
+                             :x      by-32
+                             :text   identity
+                             :style  {:fill-opacity 0.000001}}
+                            {:class "gup-exit gup-text"}]))
+    
     (js/setInterval 
       #(update (-> (shuffle alphabet)
                  (clj->js)
@@ -182,12 +195,24 @@
 
 (comment (test-general-update-pattern-3))
 
+;TODO create some simple helpers which would assist in drawing a chart.
+;N dimension structures can be created via mapping (table (map row data) (row (map column cols)) etc
+;Binding is accomplished via enter/exit pattern (gup above)
+;How can we make drawing of charts easier?
+; TODO date formatted axis
+; TODO simple grids of lines
+; layer reordering if necessary
+;
+(defn draw-primitives []
+  (let [bodysel (core/select "body")]
+    (core/layer bodysel [:div {:text "create primitives"}])))
+
 ;-------------------------------------------------------
 ; MAIN
 ;-------------------------------------------------------
 
 (defn start []
-  (test-general-update-pattern-3))
+  (draw-primitives))
 
 (figwheel/watch-and-reload
   :websocket-url "ws://localhost:3449/figwheel-ws"

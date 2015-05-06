@@ -32,6 +32,50 @@
                       :style     {:text-anchor "end"}
                       :text      y-label}]]))
 
+;TODO somewhere the dom name needs to be used.
+;NOTE the create function is passed the data being bound...
+;TODO deprecatng dom pooling, seems to make animation less smooth...
+(def ^:private dompool (atom {}))
+
+(defn- factory [context tag]
+  (let [nameq (js/d3.ns.qualify tag)]
+    (if (.-local nameq)
+      (.createElementNS 
+        (.-ownerDocument context) 
+        (.-space nameq)
+        (.-local nameq))
+      (let [document (or (.-ownerDocument context) (.-document js/window))
+            namespace (.-namespaceURI context)]
+        (if namespace
+          (.createElementNS document namespace tag)
+          (.createElement document tag))))))
+
+(defn- create [context tag]
+  (let [cache (@dompool tag)]
+    (cond
+      (nil? cache)
+      (do
+        (js/console.log "NEWCACHE:" tag) 
+        (swap! dompool assoc tag (array))
+        (factory context tag))
+      (= 0 (.-length cache))
+      (do
+        (js/console.log (js/window.performance.now) "empty:" tag)
+        (factory context tag))
+      :else
+      (do
+        ;(js/console.log "alloc:" tag)
+        (.pop cache)))))
+
+(defn- release [selection]
+  (let [els (nth selection 0)]
+    (doseq [el els]
+      (when el
+        (let [tag  (.-tagName el)
+              cache (@dompool tag)]
+          ;(js/console.log "release:" tag el)
+          (.push cache el))))))
+
 (defn- tag-def 
   "Return a map of:
    tag   - default tag string is g if none is specified
@@ -142,10 +186,9 @@
    Handles the occasional edge case such as reordering invocations to invoke duration first."
   [selection m]
   (if (:duration m)
-    (let [d  (:duration m)
-          s  (.duration selection d)
-          nm (dissoc m :duration)]
-      (apply-api s nm))
+    (apply-api 
+      (.duration selection (:duration m)) 
+      (dissoc m :duration))
     (apply-api selection m)))
 
 (defn transition 
@@ -190,7 +233,7 @@
   ([selection tag m]
     (-> selection
       (.enter)
-      (.append tag)
+      (append tag)
       (operators m))))
 
 (defn exit 

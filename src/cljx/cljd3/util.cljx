@@ -35,6 +35,27 @@
               :else    y))]
     (merge-with fx x y)))
 
+(comment
+  "Append a *keys* variable to the bindings for introspection
+  TODO yagni?"
+  (defmacro context-old
+   [bindings & forms]
+   (let [kw->sym #(symbol (str "*" (name %) "*"))
+         isxy    #(or (= :x %) (= :y %))
+         isnotxy (complement isxy)
+         others  #(filterv notxy %)
+         ps      (partition 2 bindings)
+         ks      (map first ps)
+         vs      (map second ps)
+         v       (conj (symbol *keys*) ks)])
+   `(binding [~@v] forms)))
+
+(defmacro context
+  "Convert the keyword bindings into the context variable."
+  [bindings & forms]
+  (let [m (into {} bindings)]
+    `(binding [*context* m] forms)))
+
 ; check to see if data attr is found.
 ; if so, use data, insert enter and then do append.
 ; assume identity by default for text

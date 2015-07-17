@@ -6,8 +6,9 @@
                                   exit 
                                   transition 
                                   duration]] 
-    [cljd3.chart :as chart]
-    [cljd3.gog   :as gog]))
+    [cljd3.chart  :as chart]
+    [cljd3.gog    :as gog]
+    [cljd3.sketch :as sketch]))
 
 (enable-console-print!)
 
@@ -174,17 +175,8 @@
     (update alphabet)
     
     (comment
-      "sketching out a combined format, seems impossible from this angle.
-       get more practical first, and find use for such a thing."
-      (with "text"
-        {:gup-text "blah"} [{:class "gup-update gup-text"}
-                            {:class "gup-enter gup-text"
-                             :dy    ".35em"
-                             :y      60
-                             :x      by-32
-                             :text   identity
-                             :style  {:fill-opacity 0.000001}}
-                            {:class "gup-exit gup-text"}]))
+      "sketch out a combined format, seems impossible from this angle.
+       get more practical first, and find use for such a thing.")
     
     (js/setInterval 
       #(update (-> (shuffle alphabet)
@@ -203,9 +195,33 @@
 ; TODO simple grids of lines
 ; layer reordering if necessary
 ;
+
+(defn wrong-way-line [sel]
+  (let [step  10
+        lastx -999
+        lasty -999
+        y     50
+        borderx 20
+        bordery 10]
+    (loop [x borderx]
+      (when (> (- width borderx) x)
+        (let [y 3])
+        (recur (+ x step))))))
+
 (defn draw-primitives []
-  (let [bodysel (core/select "body")]
-    (core/layer bodysel [:div {:text "create primitives"}])))
+  (let [width  500
+        height 500
+        body (core/select "body")
+        svg  (core/layer 
+               bodysel
+               [:svg.container {:width  width
+                                :height height} nil])]
+    
+    
+    
+    
+    
+    ))
 
 ;-------------------------------------------------------
 ; MAIN
